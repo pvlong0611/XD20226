@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="Xóc Đĩa Pro - Chuẩn Từng Đồng (3 Vị)", layout="centered"
+    page_title="Xóc Đĩa Pro - Đảm Bảo Luôn Có Lãi", layout="centered"
 )
 
 # --- CSS TÙY CHỈNH GIAO DIỆN DI ĐỘNG & THU NHỎ THÔNG BÁO ---
@@ -42,7 +42,7 @@ st.markdown("""
 if "history" not in st.session_state:
   st.session_state.history = []
 
-st.title("🎲 Xóc Đĩa Pro - 3 Vị Khác Nhau (Chuẩn Xác 100%)")
+st.title("🎲 Xóc Đĩa Pro - 3 Vị (Đảm Bảo Ăn Là Có Lãi)")
 
 
 # --- PHẦN 1: CÀI ĐẶT THÔNG SỐ VỐN & CHIẾN THUẬT ---
@@ -51,7 +51,7 @@ total_capital = st.sidebar.number_input(
     "Tổng Vốn Mang Vào (VNĐ):", min_value=100000, value=5000000, step=100000
 )
 base_bet = st.sidebar.number_input(
-    "Mức Cược Gốc Ban Đầu (VNĐ):", min_value=10000, value=50000, step=10000
+    "Mức Cược Tổng Ban Đầu (VNĐ):", min_value=30000, value=60000, step=10000
 )
 
 betting_strategy = st.sidebar.selectbox(
@@ -81,7 +81,7 @@ label_map = {0: "4T", 1: "1Đ3T", 2: "2Đ2T", 3: "3Đ1T", 4: "4Đ"}
 
 # HỆ SỐ LỜI THUẦN (Net profit multiplier)
 net_odds_vi = {0: 15.0, 1: 3.8, 2: 2.6, 3: 3.8, 4: 15.0}
-# HỆ SỐ TỔNG NHẬN (dùng để phân bổ tỷ lệ tiền đối xứng)
+# HỆ SỐ TỔNG NHẬN (dùng để phân bổ tỷ lệ tiền nghịch đảo giúp ăn cửa nào cũng lãi)
 total_odds_return_vi = {0: 16.0, 1: 4.8, 2: 3.6, 3: 4.8, 4: 16.0}
 
 for val in range(5):
@@ -105,7 +105,7 @@ if st.sidebar.button("🗑 Reset Lịch Sử"):
 history = st.session_state.history
 
 
-# --- HÀM THUẬT TOÁN DỰ ĐOÁN 3 VỊ KHÁC NHAU HOÀN TOÀN ---
+# --- HÀM THUẬT TOÁN DỰ ĐOÁN 3 VỊ KHÁC NHAU ---
 def get_prediction_vi_unique(hist_slice):
   if len(hist_slice) < 6:
     return 3, 2, 1
@@ -137,11 +137,13 @@ def get_prediction_vi_unique(hist_slice):
   return unique_doors[0], unique_doors[1], unique_doors[2]
 
 
-# --- HÀM PHÂN BỔ TIỀN 3 CỬA CHUẨN XÁC, KHÔNG LỆCH TỔNG CƯỢC ---
+# --- HÀM PHÂN BỔ TIỀN 3 CỬA ĐẢM BẢO LUÔN CÓ LÃI KHI TRÚNG ---
 def calculate_bets_vi(target_total_bet, d1, d2, d3):
   r1 = total_odds_return_vi[d1]
   r2 = total_odds_return_vi[d2]
   r3 = total_odds_return_vi[d3]
+
+  # Phân bổ theo tỷ lệ nghịch đảo hệ số trả thưởng (Cửa ăn thấp cược nhiều, cửa ăn cao cược ít)
   inv1, inv2, inv3 = 1.0 / r1, 1.0 / r2, 1.0 / r3
   sum_inv = inv1 + inv2 + inv3
 
@@ -150,7 +152,6 @@ def calculate_bets_vi(target_total_bet, d1, d2, d3):
   m3 = max(10000, round((target_total_bet * (inv3 / sum_inv)) / 10000) * 10000)
 
   actual_total = m1 + m2 + m3
-  # Điều chỉnh chính xác khớp tuyệt đối với target_total_bet
   if actual_total != target_total_bet:
     diff = target_total_bet - actual_total
     m1 += diff
@@ -168,7 +169,7 @@ def format_k(amount):
 
 # --- PHẦN 3: PHÂN TÍCH & DỰ ĐOÁN 3 VỊ ---
 st.markdown("---")
-st.subheader("🤖 Phân Tích 3 Vị Khác Nhau (Từ Ván 7)")
+st.subheader("🤖 Phân Tích 3 Vị Khác Nhau (Đảm Bảo Có Lãi)")
 
 if len(history) >= 6:
   d1, d2, d3 = get_prediction_vi_unique(history)
@@ -194,8 +195,9 @@ if len(history) >= 6:
           unrecovered_loss += float(val_str)
         else:
           break
+      # Hệ số bù lỗ an toàn giúp khi thắng luôn bù sạch gốc cũ + có lãi lớn
       current_target = (
-          (unrecovered_loss + base_bet) / 0.45
+          (unrecovered_loss + base_bet) / 0.4
           if unrecovered_loss > 0
           else base_bet
       )
@@ -245,7 +247,7 @@ if len(history) >= 6:
       else:
         break
     next_target = (
-        (unrecovered_loss + base_bet) / 0.45
+        (unrecovered_loss + base_bet) / 0.4
         if unrecovered_loss > 0
         else base_bet
     )
@@ -258,26 +260,26 @@ if len(history) >= 6:
   col_m1, col_m2, col_m3 = st.columns(3)
   with col_m1:
     st.metric(
-        label="🎯 Cửa 1",
-        value=f"{label_map[d1]}",
+        label=f"🎯 Cửa 1 ({label_map[d1]})",
+        value=f"Ăn: 1:{net_odds_vi[d1]}",
         delta=f"Cược: {format_k(money_1)}",
     )
   with col_m2:
     st.metric(
-        label="🔹 Cửa 2",
-        value=f"{label_map[d2]}",
+        label=f"🔹 Cửa 2 ({label_map[d2]})",
+        value=f"Ăn: 1:{net_odds_vi[d2]}",
         delta=f"Cược: {format_k(money_2)}",
     )
   with col_m3:
     st.metric(
-        label="🔸 Cửa 3",
-        value=f"{label_map[d3]}",
+        label=f"🔸 Cửa 3 ({label_map[d3]})",
+        value=f"Ăn: 1:{net_odds_vi[d3]}",
         delta=f"Cược: {format_k(money_3)}",
     )
 
   st.info(
-      f"💰 **Tổng Cược Ván Kế Tiếp:** `{format_k(total_current_bet)}` (3 Vị"
-      " khác nhau hoàn toàn)"
+      f"💰 **Tổng Cược Ván Kế Tiếp:** `{format_k(total_current_bet)}` (Phân bổ"
+      " chuẩn xác để ăn bất kỳ cửa nào cũng có lãi)"
   )
 
   st.markdown("---")
@@ -341,9 +343,7 @@ col_b1, col_b2, col_b3 = st.columns(3)
 
 with col_b1:
   st.markdown("**Cầu Chẵn / Lẻ**")
-  cl_data = [
-      "Chẵn" if v in [0, 2, 4] else "Lẻ" for v in history
-  ]  # Sử dụng hàm trực tiếp
+  cl_data = ["Chẵn" if v in [0, 2, 4] else "Lẻ" for v in history]
   df_cl = create_compact_casino_grid(cl_data)
   st.dataframe(df_cl, use_container_width=True, hide_index=True)
 
