@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="Xóc Đĩa Pro - Hiển Thị To Rõ (3 Vị)", layout="centered"
+    page_title="Xóc Đĩa Pro - Giao Diện Tinh Gọn", layout="centered"
 )
 
 # --- CSS TÙY CHỈNH GIAO DIỆN TO RÕ CHO DI ĐỘNG ---
@@ -35,7 +35,6 @@ st.markdown("""
         font-size: 14px !important;
         margin-bottom: 0.5rem !important;
     }
-    /* Phóng to trực quan các chỉ số metric */
     [data-testid="stMetricValue"] {
         font-size: 32px !important;
         font-weight: 800 !important;
@@ -52,7 +51,7 @@ st.markdown("""
 if "history" not in st.session_state:
   st.session_state.history = []
 
-st.title("🎲 Xóc Đĩa Pro - Giao Diện Vị To Rõ")
+st.title("🎲 Xóc Đĩa Pro - Giao Diện Vị To Rõ & Cầu Tinh Gọn")
 
 
 # --- PHẦN 1: CÀI ĐẶT THÔNG SỐ VỐN & CHIẾN THUẬT ---
@@ -312,7 +311,7 @@ else:
   )
 
 
-# --- PHẦN 4: BẢNG CẦU TRỰC QUAN ---
+# --- PHẦN 4: BẢNG CẦU TRỰC QUAN (TỐI ƯU KÝ HIỆU RÚT GỌN) ---
 def create_compact_casino_grid(data_list, max_rows=5, max_cols=10):
   if not data_list:
     return pd.DataFrame()
@@ -350,21 +349,23 @@ col_b1, col_b2, col_b3 = st.columns(3)
 
 with col_b1:
   st.markdown("**Cầu Chẵn / Lẻ**")
-  cl_data = ["Chẵn" if v in [0, 2, 4] else "Lẻ" for v in history]
+  # Rút gọn: Chẵn -> C, Lẻ -> L
+  cl_data = ["C" if v in [0, 2, 4] else "L" for v in history]
   df_cl = create_compact_casino_grid(cl_data)
   st.dataframe(df_cl, use_container_width=True, hide_index=True)
 
 with col_b2:
   st.markdown("**Cầu Tài / Xỉu / 2**")
+  # Rút gọn: Xỉu -> X, Tài -> T, Số 2 -> 2
   tx2_data = [
-      "Xỉu" if v in [0, 1] else ("Tài" if v in [3, 4] else "Số 2")
-      for v in history
+      "X" if v in [0, 1] else ("T" if v in [3, 4] else "2") for v in history
   ]
   df_tx2 = create_compact_casino_grid(tx2_data)
   st.dataframe(df_tx2, use_container_width=True, hide_index=True)
 
 with col_b3:
   st.markdown("**Lịch Sử Vị**")
-  chitiet_data = [f"{v}({label_map[v]})" for v in history]
-  df_ct = create_compact_casino_grid(chitiet_data, max_cols=6)
+  # Rút gọn vị thành các con số: 0, 1, 2, 3, 4
+  chitiet_data = [str(v) for v in history]
+  df_ct = create_compact_casino_grid(chitiet_data, max_cols=8)
   st.dataframe(df_ct, use_container_width=True, hide_index=True)
